@@ -2,6 +2,7 @@
 
 export const languageCode = {
   english: 'en',
+  polish: 'pl',
   romanian: 'ro',
   chinese: 'zh-CN',
   italian: 'it',
@@ -14,6 +15,12 @@ export const supportedLanguages = [
     file: 'en.json',
     displayName: 'English',
     icon: 'svgo-flags-en',
+  },
+  {
+    code: languageCode.polish,
+    file: 'pl.json',
+    displayName: 'Polski',
+    icon: 'svgo-flags-pl',
   },
   {
     code: languageCode.romanian,
