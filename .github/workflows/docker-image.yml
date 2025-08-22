@@ -1,6 +1,7 @@
 name: Build latest docker image
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
