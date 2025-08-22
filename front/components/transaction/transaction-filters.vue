@@ -7,7 +7,9 @@
 
       <div ref="popupContentRef" class="flex-1 flex-column overflow-auto color" style="padding-bottom: 100px">
         <van-form @submit="onApplyFilters">
-          <app-field class="flex-1" v-model="description" :label="$t('description')" :placeholder="$t('description')" />
+          <app-field v-model="description" class="flex-1" :label="$t('description')" :placeholder="$t('description')" />
+
+          <app-field v-model="notes" class="flex-1" :label="$t('notes')" :placeholder="$t('notes')" />
 
           <transaction-type-select v-model="transactionType" />
 
@@ -26,7 +28,8 @@
               <app-checkbox v-model="withoutTag" shape="square" />
             </div>
 
-            <tag-select v-model="tag" :disabled="!!withoutTag" class="flex-1" :is-multi-select="false" :auto-select-parents="false" />
+            <tag-select v-model="tag" :disabled="!!withoutTag" class="flex-1" :is-multi-select="false"
+              :auto-select-parents="false" />
           </div>
 
           <div class="display-flex van-cell-fake pl-3 align-items-baseline">
@@ -35,14 +38,15 @@
               <app-checkbox v-model="withoutBudget" shape="square" />
             </div>
 
-            <budget-select v-model="budget" :disabled="!!withoutBudget" class="flex-1" :is-multi-select="false" :auto-select-parents="false" />
+            <budget-select v-model="budget" :disabled="!!withoutBudget" class="flex-1" :is-multi-select="false"
+              :auto-select-parents="false" />
           </div>
 
-          <account-select v-model="account" :isMultiSelect="true" />
+          <account-select v-model="account" :is-multi-select="true" />
 
           <div class="flex-center-vertical">
-            <app-date class="flex-1" v-model="dateStart" :label="$t('date_after')" />
-            <app-date class="flex-1" v-model="dateEnd" :label="$t('date_before')" />
+            <app-date v-model="dateStart" class="flex-1" :label="$t('date_after')" />
+            <app-date v-model="dateEnd" class="flex-1" :label="$t('date_before')" />
           </div>
 
           <div class="px-3 flex-center-vertical gap-1">
@@ -52,13 +56,13 @@
           </div>
 
           <div class="display-flex">
-            <app-field class="flex-1" v-model="amountStart" :label="$t('amount_min')" :placeholder="$t('amount_min')" />
-            <app-field class="flex-1" v-model="amountEnd" :label="$t('amount_max')" :placeholder="$t('amount_max')" />
+            <app-field v-model="amountStart" class="flex-1" :label="$t('amount_min')" :placeholder="$t('amount_min')" />
+            <app-field v-model="amountEnd" class="flex-1" :label="$t('amount_max')" :placeholder="$t('amount_max')" />
           </div>
 
           <app-button-form-save :label="$t('filters.apply_filters')" bottom=" - var(--van-tabbar-height) + 20px">
             <template #left>
-              <van-button v-if="isFiltered" @click="onClearFilters" round>{{ $t('filters.clear') }}</van-button>
+              <van-button v-if="isFiltered" round @click="onClearFilters">{{ $t('filters.clear') }}</van-button>
             </template>
           </app-button-form-save>
         </van-form>
@@ -77,8 +81,9 @@ import { addMonths, endOfMonth, startOfMonth } from 'date-fns'
 const modelValue = defineModel({})
 
 const localModelValue = ref({})
-const { description, dateStart, dateEnd, amountStart, amountEnd, category, withoutCategory, tag, withoutTag, account, transactionType, withoutBudget, budget } = generateChildren(localModelValue, [
+const { description, notes, dateStart, dateEnd, amountStart, amountEnd, category, withoutCategory, tag, withoutTag, account, transactionType, withoutBudget, budget } = generateChildren(localModelValue, [
   'description',
+  'notes',
   'dateStart',
   'dateEnd',
   'amountStart',

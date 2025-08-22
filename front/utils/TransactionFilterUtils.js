@@ -6,6 +6,8 @@ import Budget from '~/models/Budget.js'
 import Account from '~/models/Account.js'
 import { useProfileStore } from '~/stores/profileStore.js'
 import { translate } from '~/plugins/plugin-i18n.js'
+import { ellipsizeText } from '~/utils/Utils.js'
+import DateUtils from '~/utils/DateUtils.js'
 
 export default {
   /*
@@ -27,6 +29,11 @@ export default {
       bagKey: 'description',
       filter: (item) => `description_contains:"${item}"`,
       display: (item) => `Description: ${item}`,
+    },
+    notes: {
+      bagKey: 'notes',
+      filter: (item) => `notes_contain:"${item}"`,
+      display: (item) => `Notes: ${item}`,
     },
     transactionType: {
       bagKey: 'transactionType',
