@@ -2,6 +2,9 @@
 // @ts-ignore
 import pkg from './package.json'
 import { supportedLanguages } from './i18n'
+// defineNuxtConfig is available globally in Nuxt config context
+// Add a lightweight declaration to satisfy TS in editors
+declare const defineNuxtConfig: any
 
 const appName = 'Firefly Pico'
 const appDescription = 'Firefly III companion app.'
@@ -14,7 +17,7 @@ export default defineNuxtConfig({
     vueI18n: './i18n/i18n.config.js',
     langDir: 'locales',
     locales: supportedLanguages,
-    defaultLocale: 'en',
+    defaultLocale: 'pl',
     lazy: true,
     strategy: 'no_prefix',
     compilation: {

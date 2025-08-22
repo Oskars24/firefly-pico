@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+ import { defineStore } from 'pinia'
 import { StorageSerializers, useLocalStorage } from '@vueuse/core'
 import * as LanguageConstants from '~/constants/LanguageConstants'
 import DateUtils from '~/utils/DateUtils'
@@ -23,7 +23,7 @@ export const useProfileStore = defineStore('profile', {
 
       // Actual fields which update when you change profiles
       darkTheme: useLocalStorage('darkTheme', false),
-      language: useLocalStorage('language', 'en'),
+      language: useLocalStorage('language', 'pl'),
       startingPage: useLocalStorage('startingPage', Page.types.transactionNew),
       showAnimations: useLocalStorage('showAnimations', true),
       resetFormOnCreate: useLocalStorage('resetFormOnCreate', false),
