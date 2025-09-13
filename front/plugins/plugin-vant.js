@@ -9,6 +9,7 @@ import zhCN from 'vant/es/locale/lang/zh-CN'
 import italian from 'vant/es/locale/lang/it-IT'
 import plPL from 'vant/es/locale/lang/pl-PL'
 import ptBR from 'vant/es/locale/lang/pt-BR'
+import deDE from 'vant/es/locale/lang/de-DE'
 
 import { languageCode } from '~/i18n/index.js'
 
@@ -23,6 +24,8 @@ export default defineNuxtPlugin((nuxtApp) => {
         [languageCode.chinese]: zhCN,
         [languageCode.italian]: italian,
         [languageCode.brazilian_portuguese]: ptBR,
+        [languageCode.german_german]: deDE,
+        [languageCode.swiss_german]: deDE,
       }
       let locale = localeDictionary[newValue] || enUS
       Locale.use(newValue, locale)
