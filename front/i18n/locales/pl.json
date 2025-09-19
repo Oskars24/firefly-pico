@@ -16,7 +16,8 @@
     "no_data": "Brak danych",
     "income": "Przychód",
     "expense": "Wydatek",
-    "transfer": "Przelew"
+    "transfer": "Przelew",
+    "balance": "Bilans"
   },
   "search_placeholder": "Szukaj...",
   "clone": "Klonuj",

@@ -54,15 +54,22 @@
                                         <div class="stat-amounts">
                                             <div v-if="tagStat.income > 0" class="stat-amount income">
                                                 <span class="amount-label">{{ $t('statistics.income') }}:</span>
-                                                <span class="amount-value">{{ formatAmount(tagStat.income) }}</span>
+                                                <span class="amount-value">+{{ formatAmount(tagStat.income) }}</span>
                                             </div>
                                             <div v-if="tagStat.expense > 0" class="stat-amount expense">
                                                 <span class="amount-label">{{ $t('statistics.expense') }}:</span>
-                                                <span class="amount-value">{{ formatAmount(tagStat.expense) }}</span>
+                                                <span class="amount-value">-{{ formatAmount(tagStat.expense) }}</span>
                                             </div>
                                             <div v-if="tagStat.transfer > 0" class="stat-amount transfer">
                                                 <span class="amount-label">{{ $t('statistics.transfer') }}:</span>
                                                 <span class="amount-value">{{ formatAmount(tagStat.transfer) }}</span>
+                                            </div>
+                                            <div v-if="(tagStat.income > 0 || tagStat.expense > 0) && getTagBalance(tagStat) !== 0"
+                                                class="stat-amount balance"
+                                                :class="{ 'positive': getTagBalance(tagStat) > 0, 'negative': getTagBalance(tagStat) < 0 }">
+                                                <span class="amount-label">{{ $t('statistics.balance') }}:</span>
+                                                <span class="amount-value">{{ getTagBalance(tagStat) > 0 ? '+' : '-'
+                                                    }}{{ formatAmount(Math.abs(getTagBalance(tagStat))) }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -83,12 +90,12 @@
                                         <div class="stat-amounts">
                                             <div v-if="categoryStat.income > 0" class="stat-amount income">
                                                 <span class="amount-label">{{ $t('statistics.income') }}:</span>
-                                                <span class="amount-value">{{ formatAmount(categoryStat.income)
+                                                <span class="amount-value">+{{ formatAmount(categoryStat.income)
                                                     }}</span>
                                             </div>
                                             <div v-if="categoryStat.expense > 0" class="stat-amount expense">
                                                 <span class="amount-label">{{ $t('statistics.expense') }}:</span>
-                                                <span class="amount-value">{{ formatAmount(categoryStat.expense)
+                                                <span class="amount-value">-{{ formatAmount(categoryStat.expense)
                                                     }}</span>
                                             </div>
                                             <div v-if="categoryStat.transfer > 0" class="stat-amount transfer">
@@ -207,6 +214,7 @@ const tagStats = computed(() => {
         const filters = statisticsStore.currentFilters || {}
 
         console.log('Computing tag statistics for', transactions.length, 'transactions')
+        console.log('Selected tag filter:', filters.tag)
 
         // Sprawdź czy w filtrach jest wybrany tag główny
         const selectedTag = filters.tag
@@ -214,113 +222,85 @@ const tagStats = computed(() => {
         // Oblicz statystyki tagów
         const tagMap = new Map()
 
-        if (selectedTag) {
-            // Jeśli jest wybrany tag główny, pokaż tylko transakcje z tym tagiem i ich wszystkie tagi
-            transactions.forEach(transaction => {
-                // Pobierz pierwszą transakcję z grupy
-                const txData = transaction.attributes?.transactions?.[0]
-                if (!txData) return
+        // ZAWSZE pokaż wszystkie tagi (bez względu na filtry)
+        // ale tylko z transakcji które pasują do filtrów
+        transactions.forEach(transaction => {
+            // Pobierz pierwszą transakcję z grupy
+            const txData = transaction.attributes?.transactions?.[0]
+            if (!txData) return
 
-                const tags = txData.tags || []
-                const amount = parseFloat(txData.amount || 0)
-                const type = txData.type?.fireflyCode || txData.type // Użyj fireflyCode z obiektu type
+            const tags = txData.tags || []
+            const amount = parseFloat(txData.amount || 0)
+            const type = txData.type?.fireflyCode || txData.type // Użyj fireflyCode z obiektu type
 
-                // Sprawdź czy transakcja ma tag główny
-                const hasMainTag = tags.some(tagName => tagName === selectedTag.attributes?.tag)
-
-                if (hasMainTag) {
-                    // Dodaj wszystkie tagi z tej transakcji (włącznie z głównym)
-                    tags.forEach(tagName => {
-                        if (!tagMap.has(tagName)) {
-                            tagMap.set(tagName, {
-                                id: tagName,
-                                tag: tagName, // Przechowuj nazwę jako string
-                                income: 0,      // Przychody
-                                expense: 0,     // Wydatki
-                                transfer: 0,    // Transfery
-                                count: 0,
-                                isMainTag: tagName === selectedTag.attributes?.tag
-                            })
-                        }
-
-                        const tagStat = tagMap.get(tagName)
-
-                        // Sumuj według typu transakcji
-                        if (type === 'deposit') {
-                            tagStat.income += Math.abs(amount)
-                        } else if (type === 'withdrawal') {
-                            tagStat.expense += Math.abs(amount)
-                        } else if (type === 'transfer') {
-                            tagStat.transfer += Math.abs(amount)
-                        }
-
-                        tagStat.count += 1
-                    })
+            // Jeśli jest wybrany tag w filtrach, sprawdź czy transakcja go ma
+            // (ale nadal pokaż wszystkie tagi z tej transakcji)
+            if (selectedTag) {
+                const hasMainTag = tags.some(tagObj => tagObj.attributes?.tag === selectedTag.attributes?.tag)
+                if (!hasMainTag) {
+                    // Pomiń transakcje które nie mają wybranego tagu
+                    return
                 }
-            })
-        } else {
-            // Jeśli nie ma wybranego tagu głównego, pokaż wszystkie tagi
-            transactions.forEach(transaction => {
-                // Pobierz pierwszą transakcję z grupy
-                const txData = transaction.attributes?.transactions?.[0]
-                if (!txData) return
+            }
 
-                // Debug: sprawdź strukturę danych
-                if (transactions.indexOf(transaction) === 0) {
-                    console.log('Sample transaction data:', {
-                        txData,
-                        type: txData.type,
-                        amount: txData.amount,
-                        source_name: txData.source_name,
-                        destination_name: txData.destination_name
+            // Debug: sprawdź strukturę danych
+            if (transactions.indexOf(transaction) === 0) {
+                console.log('Sample transaction data:', {
+                    txData,
+                    type: txData.type,
+                    amount: txData.amount,
+                    tags: tags.map(t => t.attributes?.tag),
+                    selectedTag: selectedTag?.attributes?.tag,
+                    hasSelectedTag: selectedTag ? tags.some(tagObj => tagObj.attributes?.tag === selectedTag.attributes?.tag) : 'no filter'
+                })
+            }
+
+            console.log('Processing transaction:', {
+                typeObject: txData.type,
+                fireflyCode: txData.type?.fireflyCode,
+                finalType: type,
+                amount,
+                tagNames: tags.map(t => t.attributes?.tag),
+                selectedTagFilter: selectedTag?.attributes?.tag
+            })
+
+            // Dodaj wszystkie tagi z tej transakcji do statystyk
+            tags.forEach(tagObj => {
+                const tagName = tagObj.attributes?.tag
+                if (!tagName) return // Pomiń tagi bez nazwy
+
+                if (!tagMap.has(tagName)) {
+                    tagMap.set(tagName, {
+                        id: tagName,
+                        tag: tagName, // Przechowuj nazwę jako string
+                        income: 0,      // Przychody
+                        expense: 0,     // Wydatki
+                        transfer: 0,    // Transfery
+                        count: 0,
+                        isMainTag: selectedTag && tagName === selectedTag.attributes?.tag
                     })
                 }
 
-                const tags = txData.tags || []
-                const amount = parseFloat(txData.amount || 0)
-                const type = txData.type?.fireflyCode || txData.type // Użyj fireflyCode z obiektu type
+                const tagStat = tagMap.get(tagName)
 
-                console.log('Processing transaction:', {
-                    typeObject: txData.type,
-                    fireflyCode: txData.type?.fireflyCode,
-                    finalType: type,
-                    amount,
-                    tags
-                })
+                // Sumuj według typu transakcji
+                if (type === 'deposit') {
+                    tagStat.income += Math.abs(amount)
+                    console.log(`Added income ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.income}`)
+                } else if (type === 'withdrawal') {
+                    tagStat.expense += Math.abs(amount)
+                    console.log(`Added expense ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.expense}`)
+                } else if (type === 'transfer') {
+                    tagStat.transfer += Math.abs(amount)
+                    console.log(`Added transfer ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.transfer}`)
+                } else {
+                    console.log(`Unknown transaction type: ${type} for tag ${tagName}`)
+                }
 
-                tags.forEach(tagName => {
-                    if (!tagMap.has(tagName)) {
-                        tagMap.set(tagName, {
-                            id: tagName,
-                            tag: tagName, // Przechowuj nazwę jako string
-                            income: 0,      // Przychody
-                            expense: 0,     // Wydatki
-                            transfer: 0,    // Transfery
-                            count: 0,
-                            isMainTag: false
-                        })
-                    }
-
-                    const tagStat = tagMap.get(tagName)
-
-                    // Sumuj według typu transakcji
-                    if (type === 'deposit') {
-                        tagStat.income += Math.abs(amount)
-                        console.log(`Added income ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.income}`)
-                    } else if (type === 'withdrawal') {
-                        tagStat.expense += Math.abs(amount)
-                        console.log(`Added expense ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.expense}`)
-                    } else if (type === 'transfer') {
-                        tagStat.transfer += Math.abs(amount)
-                        console.log(`Added transfer ${Math.abs(amount)} to tag ${tagName}, total: ${tagStat.transfer}`)
-                    } else {
-                        console.log(`Unknown transaction type: ${type} for tag ${tagName}`)
-                    }
-
-                    tagStat.count += 1
-                })
+                tagStat.count += 1
             })
-        }
+        })
+
         // Sortuj tagi: główny tag na górze, potem inne po łącznej wartości (malejąco)
         const result = Array.from(tagMap.values())
             .sort((a, b) => {
@@ -419,6 +399,11 @@ const getTagName = (tagStat) => {
     }
     // Jeśli tag to obiekt, zwróć tag.attributes.tag
     return tagStat.tag?.attributes?.tag || tagStat.id || 'Unknown Tag'
+}
+
+const getTagBalance = (tagStat) => {
+    // Bilans = przychód - wydatek (nie uwzględniamy transferów w bilansie)
+    return tagStat.income - tagStat.expense
 }
 
 const getCategoryIcon = (categoryStat) => {
@@ -639,6 +624,20 @@ onMounted(() => {
 .stat-amount.transfer .amount-value {
     color: #2196f3;
     /* Niebieski dla transferów */
+}
+
+.stat-amount.balance .amount-value {
+    font-weight: bold;
+}
+
+.stat-amount.balance.positive .amount-value {
+    color: #4caf50;
+    /* Zielony dla dodatniego bilansu */
+}
+
+.stat-amount.balance.negative .amount-value {
+    color: #f44336;
+    /* Czerwony dla ujemnego bilansu */
 }
 
 .debug-info {
