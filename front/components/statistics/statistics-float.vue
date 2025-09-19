@@ -285,8 +285,7 @@ const tagStats = computed(() => {
                     fireflyCode: txData.type?.fireflyCode,
                     finalType: type,
                     amount,
-                    tags,
-                    parsedAmount: amount
+                    tags
                 })
 
                 tags.forEach(tagName => {
