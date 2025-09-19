@@ -3,7 +3,11 @@
     <app-top-toolbar>
       <template #right>
         <div class="flex-center-vertical gap-1">
-          <div @click.prevent.stop="onShowFilters" class="mr-10">
+          <div class="mr-10" :class="{ 'active': showingAll }" @click.prevent.stop="onShowAll">
+            <app-icon :icon="TablerIconConstants.list" size="20" :stroke="1.6" />
+          </div>
+
+          <div class="mr-10" @click.prevent.stop="onShowFilters">
             <app-icon :icon="TablerIconConstants.search" size="20" :stroke="1.6" />
           </div>
 
@@ -12,16 +16,16 @@
       </template>
     </app-top-toolbar>
 
-    <div class="applied-filters-container" v-if="filtersDisplayList.length > 0">
+    <div v-if="filtersDisplayList.length > 0" class="applied-filters-container">
       <div class="flex-center-vertical">
         <div class="title flex-1">{{ $t('filters.applied_filters') }}</div>
       </div>
 
       <div class="display-flex flex-wrap gap-1">
-        <div v-for="appliedFilter in filtersDisplayList" class="tag-filter">
+        <div v-for="(appliedFilter, index) in filtersDisplayList" :key="index" class="tag-filter">
           <span class="ml-5">{{ appliedFilter }}</span>
         </div>
-        <div @click="onClearFilters" style="z-index: 2">
+        <div style="z-index: 2" @click="onClearFilters">
           <icon-square-rounded-x :size="26" :stroke="1.5" />
         </div>
       </div>
@@ -31,7 +35,8 @@
 
     <van-pull-refresh v-model="isRefreshing" @refresh="onRefresh">
       <van-list class="p-1" :finished="isFinished" @load="onLoadMore">
-        <transaction-list-item v-for="item in list" :key="item.id" :value="item" @onEdit="onEdit" @onDelete="onDelete" />
+        <transaction-list-item v-for="item in list" :key="item.id" :value="item" @on-edit="onEdit"
+          @on-delete="onDelete" />
       </van-list>
     </van-pull-refresh>
 
@@ -62,16 +67,17 @@ import { useListFilters } from '~/composables/useListFilters.js'
 import { IconSquareRoundedX } from '@tabler/icons-vue'
 
 const dataStore = useDataStore()
+const statisticsStore = useStatisticsStore()
 const route = useRoute()
 
 const transactionFiltersRef = ref(null)
 
-let transactionRepository = new TransactionRepository()
+const transactionRepository = new TransactionRepository()
 const onCustomGetAll = async ({ page, pageSize }) => {
   if (filtersBackendList.value.length === 0) {
     return await transactionRepository.getAll({ page: page, pageSize })
   }
-  let filters = [{ field: 'query', value: filtersBackendList.value.join(' ') }]
+  const filters = [{ field: 'query', value: filtersBackendList.value.join(' ') }]
   return await transactionRepository.searchTransaction({
     page: page,
     pageSize: pageSize,
@@ -79,7 +85,7 @@ const onCustomGetAll = async ({ page, pageSize }) => {
   })
 }
 
-const { isLoading, isFinished, isRefreshing, page, pageSize, totalPages, listTotalCount, list, isEmpty, listPagination, onAdd, onEdit, onDelete, onLoadMore, onRefresh } = useList({
+const { isLoading, isFinished, isRefreshing, page, pageSize, totalPages, listTotalCount, list, isEmpty, listPagination, showingAll, onAdd, onEdit, onDelete, onLoadMore, onRefresh, onShowAll } = useList({
   routeList: RouteConstants.ROUTE_TRANSACTION_LIST,
   routeForm: RouteConstants.ROUTE_TRANSACTION_ID,
   model: new Transaction(),
@@ -95,7 +101,7 @@ const formClass = computed(() => ({
   empty: isEmpty.value,
 }))
 
-let { filters, filtersBackendList, filtersDisplayList, activeFilters } = useListFilters({
+const { filters, filtersBackendList, filtersDisplayList, activeFilters } = useListFilters({
   filterDefinitions: Object.values(TransactionFilterUtils.filters),
 })
 
@@ -113,6 +119,15 @@ watch(filters, (newValue, oldValue) => {
   saveToUrl(activeFilters.value)
 })
 
+// Aktualizuj dane w statistics store gdy zmienią się transakcje lub filtry
+watch([list, filters], ([newList, newFilters]) => {
+  console.log('Updating statistics store with:', {
+    transactionsCount: newList.length,
+    filters: newFilters
+  })
+  statisticsStore.updateData(newList, newFilters)
+}, { immediate: true })
+
 const onClearFilters = () => {
   filters.value = {}
 }
@@ -126,7 +141,7 @@ toolbar.init({
 })
 
 onMounted(() => {
-  let filterDefinitions = Object.values(TransactionFilterUtils.filters)
+  const filterDefinitions = Object.values(TransactionFilterUtils.filters)
   filters.value = getFiltersFromURL(filterDefinitions)
 
   if (!filterBagHasValues(filters.value)) {

@@ -8,11 +8,30 @@ export default class TransactionRepository extends BaseRepository {
     this.searchTransaction = this.searchTransaction.bind(this)
   }
 
+  async getAll({ filters = [], page = 1, pageSize = 50 } = {}) {
+    // Dodaj include dla tags i categories
+    const includeFilter = {
+      field: 'include',
+      value: 'tags,category'
+    }
+    const allFilters = [...filters, includeFilter]
+    
+    let url = this.getUrlForRequest({ filters: allFilters, page, pageSize })
+    let response = await axios.get(url)
+    return get(response, 'data', {})
+  }
 
   async searchTransaction({ filters = [], page = 1, pageSize = 50 } = {}) {
+    // Dodaj include dla tags i categories
+    const includeFilter = {
+      field: 'include',
+      value: 'tags,category'
+    }
+    const allFilters = [...filters, includeFilter]
+    
     const appStore = useAppStore()
     const url = `${appStore.picoBackendURL}/api/search/transactions`
-    let searchUrl = this.getUrlForRequest({ filters, page, pageSize, url })
+    let searchUrl = this.getUrlForRequest({ filters: allFilters, page, pageSize, url })
     let response = await axios.get(searchUrl)
     return get(response, 'data', {})
   }

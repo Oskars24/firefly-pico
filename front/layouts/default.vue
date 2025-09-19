@@ -3,6 +3,7 @@
     <slot />
 
     <profile-picker-float v-if="true" />
+    <statistics-float />
     <app-bottom-toolbar />
     <app-bottom-loading />
   </div>

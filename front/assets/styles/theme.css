@@ -1164,7 +1164,7 @@ img, svg {
     justify-content: center;
 }
 
-.profile-floating-button {
+.profile-floating-button, .statistics-floating-button {
     border-top-right-radius: 0px !important;
     border-bottom-right-radius: 0px !important;
     border-bottom-left-radius: 10px !important;

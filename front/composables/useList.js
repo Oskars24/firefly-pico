@@ -23,6 +23,7 @@ export function useList(prop) {
   const isLoading = ref(false)
   const isFinished = ref(false)
   const isRefreshing = ref(false)
+  const showingAll = ref(false)
 
   //   v-model:loading="isLoading"
   // :finished="isListFinished"
@@ -95,8 +96,67 @@ export function useList(prop) {
 
     // list.value = []
     page.value = 0
+    showingAll.value = false
     await onLoadMore()
     isRefreshing.value = false
+  }
+
+  const onShowAll = async () => {
+    if (showingAll.value) {
+      // Jeśli już pokazujemy wszystkie, wróć do normalnej paginacji
+      showingAll.value = false
+      await onRefresh()
+      return
+    }
+
+    isLoading.value = true
+    showingAll.value = true
+
+    try {
+      // Najpierw sprawdź ile jest wszystkich elementów
+      let checkResult = {}
+      if (propGetAll) {
+        checkResult = await propGetAll({ page: 1, pageSize: 1 })
+      } else {
+        checkResult = await repository.getAll({ page: 1, pageSize: 1, filters: [] })
+      }
+      
+      const totalCount = get(checkResult, 'meta.pagination.total', 0)
+      
+      if (totalCount === 0) {
+        list.value = []
+        listTotalCount.value = 0
+        isFinished.value = true
+        page.value = 1
+        totalPages.value = 1
+        return
+      }
+
+      // Teraz pobierz wszystkie elementy z dokładnym limitem
+      let result = {}
+      if (propGetAll) {
+        result = await propGetAll({ page: 1, pageSize: totalCount })
+      } else {
+        result = await repository.getAll({ page: 1, pageSize: totalCount, filters: [] })
+      }
+
+      let allItems = get(result, 'data', [])
+      
+      if (transformer) {
+        allItems = transformer.transformFromApiList(allItems)
+      }
+
+      list.value = allItems
+      listTotalCount.value = allItems.length
+      isFinished.value = true
+      page.value = 1
+      totalPages.value = 1
+    } catch (error) {
+      console.error('Error loading all items:', error)
+      showingAll.value = false
+    } finally {
+      isLoading.value = false
+    }
   }
 
   const onDelete = async (item) => {
@@ -134,10 +194,12 @@ export function useList(prop) {
     pageSize,
     totalPages,
     listTotalCount,
+    showingAll,
     onAdd,
     onEdit,
     onLoadMore,
     onRefresh,
+    onShowAll,
     onDelete,
   }
 }
