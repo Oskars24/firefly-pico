@@ -30,6 +30,9 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: true,
     },
+    experimental: {
+      wasm: true
+    }
   },
   runtimeConfig: {
     public: {
@@ -44,6 +47,9 @@ export default defineNuxtConfig({
         defineModel: true,
         // propsDestructure: true
       },
+    },
+    define: {
+      global: 'globalThis',
     },
   },
 

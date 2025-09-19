@@ -49,5 +49,8 @@
   "overrides": {
     "vue": "latest"
   },
-  "type": "module"
+  "type": "module",
+  "volta": {
+    "node": "20.19.0"
+  }
 }
